@@ -289,7 +289,6 @@ class AtomsToGraphs:
     
 
 def mappings_(g, d):
-  node_ = list(g.nodes())
   ls =  list(ase.symbols.Symbols(d.atomic_numbers))
   mappings = dict()
   counter = dict()
@@ -363,7 +362,8 @@ def network_plot_3D(G, angle, save=False, hide_axis = False):
       ax.plot(x, y, z, c='black', alpha=0.1)
     
     # Set the initial view
-    ax.view_init(30, angle)
+    
+    ax.view_init(0, angle)
 
     # Hide the axes
     if hide_axis:
@@ -409,6 +409,7 @@ def edge_feat(data, disable_tqdm = False):
         #force = list()
         data_ = data[i]
         z = np.zeros((data_.num_nodes, data_.num_nodes))
+        
         for j in range(len(data_.distances)):
             z[data_.edge_index[0, j], data_.edge_index[1, j] ] = data_.distances[j]
             
