@@ -316,7 +316,7 @@ def add_attr(n_o_e, G, Data, attr):
   if n_o_e == "n":
     nx.set_node_attributes(G, attr_, name = str(attr))
   elif n_o_e == "e":
-    nx.set_edge_attributes(G, attr_, str(attr))
+    nx.set_edge_attributes(G, attr_, str(attr)) 
 
 
 
@@ -377,3 +377,49 @@ def network_plot_3D(G, angle, save=False, hide_axis = False):
     plt.show()
   
   return
+
+
+def edge_feat(data, disable_tqdm = False):
+    
+    """
+    OPTIONAL
+    Calculates edge attribute feature for all edge-node pairs.
+    It parameterise the edges on the basis of distance from one another; 
+    as the forces of neighbouring atom Atom2  far from the Atom1 have very 
+    -little influence on Atom1 also vice-versa.
+    The force influence is inversely propotional to the distances.
+    f ~ 1/A;  f = forces, A = Distances
+    f = h/A or h = f*A
+   for Atom1 --> h1 = avg(forces)* int(disctances)
+   for Atom2 --> h2 = avg(forces)* int(disctances)
+   h = (h1 + h2)/2
+    Args:
+       list of Graphs in PyG data obj form.
+    Returns:
+        list containing edge_attr (H) for all graphs passed in Args.
+        H[0] - edge_attr(h) for graph[0]; size(H[0]) == Number of edges in graph[0] 
+    """
+    
+    H = list()
+    
+    for i in tqdm(range(0, len(data)), 
+                  disable = disable_tqdm ):
+        l = list()
+        #dis = list()
+        #force = list()
+        data_ = data[i]
+        z = np.zeros((data_.num_nodes, data_.num_nodes))
+        for j in range(len(data_.distances)):
+            z[data_.edge_index[0, j], data_.edge_index[1, j] ] = data_.distances[j]
+            
+        f_diag  = np.diag(np.average(data[i].force.numpy(), axis=-1))
+        h_ =  f_diag@z
+        h = (h_ + h_.T)*0.5
+        for k in data_.edge_index.t():
+            l.append(h[k[0], k[1]])
+        
+        H.append(l)
+        #dis.append(data[i].distances.numpy())
+        #force.append(diag)
+    
+    return H
