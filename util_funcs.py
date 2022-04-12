@@ -9,13 +9,16 @@ import networkx as nx
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib.axes._axes import _log as matplotlib_axes_logger
+from tqdm import tqdm
+import os
+from embeddings import CONTINUOUS_EMBEDDINGS as c_embd, ATOMIC_RADII as a_rad
 
 try:
     from pymatgen.io.ase import AseAtomsAdaptor
 except Exception:
     pass
 
-
+"""
 try:
     shell = get_ipython().__class__.__name__
     if shell == "ZMQInteractiveShell":
@@ -24,7 +27,7 @@ try:
         from tqdm import tqdm
 except NameError:
     from tqdm import tqdm
-
+"""
 
 
 
@@ -180,10 +183,11 @@ class AtomsToGraphs:
         # set the atomic numbers, positions, and cell
         atomic_numbers = torch.Tensor(atoms.get_atomic_numbers())
         positions = torch.Tensor(atoms.get_positions())
-        cell = torch.Tensor(atoms.get_cell()).view(1, 3, 3)
+        cell = torch.Tensor(np.array(atoms.get_cell())).view(1, 3, 3)
         natoms = positions.shape[0]
         atomic_masses = torch.Tensor(atoms.get_masses())
-
+        
+        
         # put the minimum data in torch geometric data object
         data = Data(
             cell=cell,
@@ -212,8 +216,8 @@ class AtomsToGraphs:
         if self.r_distances and self.r_edges:
             data.distances = edge_distances
         if atoms.get_tags().any():
-          tags = torch.Tensor(atoms.get_tags())
-          data.tags = tags
+            tags = torch.Tensor(atoms.get_tags())
+            data.tags = tags
         if self.r_fixed:
             fixed_idx = torch.zeros(natoms)
             if hasattr(atoms, "constraints"):
@@ -223,14 +227,46 @@ class AtomsToGraphs:
                     if isinstance(constraint, FixAtoms):
                         fixed_idx[constraint.index] = 1
             data.fixed = fixed_idx
-
+        #for i in tqdm(graph_data):
+        
+        x = torch.zeros((data.natoms ,14))
+        for j in range(len(data.atomic_numbers)):
+            emp = list()
+            p  = list(data.pos[j].numpy())
+            fix  = float(data.fixed[j].numpy())
+            tag  = float(data.tags[j].numpy())
+            embd = c_embd[int(data.atomic_numbers[j])]
+            emp.extend(embd)
+            emp.extend([tag, fix])
+            emp.extend(p)
+            
+        x[j,...] = torch.tensor(emp)
+        data.x = x
+        
+        arand = [0 if np.isnan(x) == True else x*0.01 for x in list(a_rad.values())]
+        klo_edge_attr = torch.zeros(size = (len(data.distances),))
+        for i in range(len(klo_edge_attr)):
+            ed   = data.edge_index.t()[i][0]
+            j_   =  data.edge_index.t()[i][1]
+            sub  = (arand[int(data.atomic_numbers[int(ed)])]
+                   + arand[int(data.atomic_numbers[int(j_)])]) 
+            dis = data.distances[i] - sub
+            if dis <0:
+                dis = 1e-5
+            else:
+                pass
+            klo_edge_attr[i] = dis
+        data.distx = klo_edge_attr
+        """
         zro = np.zeros(shape = (natoms,3,3))
         for i in range(natoms):
           zro[i, 0, ...] = [int(atomic_numbers[i]), float(atomic_masses[i]), int(tags[i])]
           zro[i, 1, ...] = positions[i,...].tolist()
           zro[i, 2, ...] = forces[i,...].tolist()
         
-        data.x = torch.Tensor(zro)       
+        data.x = torch.reshape(torch.Tensor(zro), 
+                               shape=(natoms, 9))
+        """
         return data
 
     def convert_all(
@@ -267,11 +303,11 @@ class AtomsToGraphs:
         else:
             raise NotImplementedError
 
-        for atoms in tqdm(
-            atoms_iter,
+        for i , atoms in tqdm(enumerate(
+            atoms_iter),
             desc="converting ASE atoms collection to graphs",
             total=len(atoms_collection),
-            unit=" systems",
+            unit="systems",
             disable=disable_tqdm,
         ):
             # check if atoms is an ASE Atoms object this for the ase.db case
@@ -280,10 +316,13 @@ class AtomsToGraphs:
             data = self.convert(atoms)
             data_list.append(data)
 
+            if collate_and_save:
+                torch.save(data, os.path.join(processed_file_path,f'data_{i}.pt'))
+        """
         if collate_and_save:
             data, slices = collate(data_list)
             torch.save((data, slices), processed_file_path)
-
+        """
         return data_list
     
     
@@ -363,7 +402,7 @@ def network_plot_3D(G, angle, save=False, hide_axis = False):
     
     # Set the initial view
     
-    ax.view_init(0, angle)
+    ax.view_init(30, angle)
 
     # Hide the axes
     if hide_axis:
@@ -424,3 +463,4 @@ def edge_feat(data, disable_tqdm = False):
         #force.append(diag)
     
     return H
+
