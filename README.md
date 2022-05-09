@@ -1,12 +1,12 @@
 # S2EF
 # (Structure to Energy and forces)
-Quantum simulations in the material science discipline are majorly driven by gold
+  Quantum simulations in the material science discipline are majorly driven by gold
 standard models built on Density Functional Theory (DFT). Broadly the solid-state material
 simulations or calculations can be divided into three blocks, first structural relaxations of a
 system by iteratively optimizing the positions in the defined space until convergence; second,
 calculations of forces and energies exerted by each element of the system and the system; third,
 calculation of physical properties of the system like optical, electronic properties, etc.\
-Though the traditional approach yields higher accuracy with real system/material, the
+  Though the traditional approach yields higher accuracy with real system/material, the
 trade-off in terms of computational cost and efficiency. Traditionally, relaxed energies of the
 structure are found by first performing structural relaxations through an iterative local
 optimization process that estimates the gradients (atomic forces) using DFT, which is in turn
@@ -15,7 +15,7 @@ on every single atom of the relaxed structures are calculated by using predefine
 functions. This computationally expensive process typically requires hundreds of DFT
 calculations to converge (hours or days of computing per relaxation) and forms the basis of
 most computational chemistry efforts.\
-One approach to solving the energy and forces task is using ML to approximate energies
+  One approach to solving the energy and forces task is using ML to approximate energies
 and forces from DFT relaxations. In the approach, we train a machine learning model fuel by
 DFT calculation to train an independent function for approximation of energy, after the training
 the ML model is expected to calculate the energies and forces of given atomic systems and
