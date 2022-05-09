@@ -26,3 +26,4 @@ In this work, we’ve tried to solve the task of “Given any Structure, predict
 Energy and per-atom Forces” (S2EF). Given any structure of catalyst and adsorbate i.e., the
 position of atoms in the Euclidean space, we’ve tried to predict the energy of the system by
 using the subset of machine learning, graph neural networks.
+![image](https://user-images.githubusercontent.com/78033216/167482915-fbc50efb-6cdc-404e-b32f-65e213c911ca.png)
